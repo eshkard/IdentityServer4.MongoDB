@@ -1,14 +1,22 @@
-﻿using AutoMapper;
+﻿using System.Collections.Generic;
+using AutoMapper;
 
 namespace IdentityServer4.MongoDB.Mappers
 {
     /// <summary>
     /// Defines entity/model mapping for API resources.
     /// </summary>
+    /// <seealso cref="AutoMapper.Profile" />
     public class ApiResourceMapperProfile : Profile
     {
+        /// <summary>
+        /// <see cref="ApiResourceMapperProfile"/>
+        /// </summary>
         public ApiResourceMapperProfile()
         {
+            CreateMap<Entities.ApiResourceProperty, KeyValuePair<string, string>>()
+                .ReverseMap();
+
             CreateMap<Entities.ApiResource, Models.ApiResource>(MemberList.Destination)
                 .ConstructUsing(src => new Models.ApiResource())
                 .ForMember(x => x.ApiSecrets, opts => opts.MapFrom(x => x.Secrets))

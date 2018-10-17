@@ -7,8 +7,14 @@ namespace IdentityServer4.MongoDB.Mappers
     /// <summary>
     /// Defines entity/model mapping for clients.
     /// </summary>
+    /// <seealso cref="AutoMapper.Profile" />
     public class ClientMapperProfile : Profile
     {
+        /// <summary>
+        /// <see>
+        ///     <cref>{ClientMapperProfile}</cref>
+        /// </see>
+        /// </summary>
         public ClientMapperProfile()
         {
             CreateMap<Entities.ClientProperty, KeyValuePair<string, string>>()
