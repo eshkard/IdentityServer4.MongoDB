@@ -1,9 +1,8 @@
 ﻿using System;
-using System.Threading;
-using System.Threading.Tasks;
 using IdentityServer4.MongoDB.Options;
 using IdentityServer4.MongoDB.Services;
 using IdentityServer4.MongoDB.Stores;
+using IdentityServer4.MongoDB.Tokens;
 using IdentityServer4.Stores;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +11,9 @@ namespace IdentityServer4.MongoDB.Extensions
 {
     public static class IdentityServerMongoDbBuilderExtensions
     {
+        /// <summary>
+        /// Configures implementation of IClientStore, IResourceStore, and ICorsPolicyService with IdentityServer.
+        /// </summary>
         public static IIdentityServerBuilder AddConfigurationStore(
             this IIdentityServerBuilder builder,
             Action<StoreOptions> storeOptionsAction = null)
@@ -27,6 +29,9 @@ namespace IdentityServer4.MongoDB.Extensions
             return builder;
         }
 
+        /// <summary>
+        /// Configures caching for IClientStore, IResourceStore, and ICorsPolicyService with IdentityServer.
+        /// </summary>
         public static IIdentityServerBuilder AddConfigurationStoreCache(
             this IIdentityServerBuilder builder)
         {
@@ -40,15 +45,18 @@ namespace IdentityServer4.MongoDB.Extensions
             return builder;
         }
 
+        /// <summary>
+        /// Configures implementation of IPersistedGrantStore with IdentityServer.
+        /// </summary>
         public static IIdentityServerBuilder AddOperationalStore(
             this IIdentityServerBuilder builder,
             Action<StoreOptions> storeOptionsAction = null,
             Action<TokenCleanupOptions> tokenCleanUpOptionsAction = null)
         {
+            builder.Services.AddTransient<IPersistedGrantStore, PersistedGrantStore>();
+
             builder.Services.AddSingleton<TokenCleanup>();
             builder.Services.AddSingleton<IHostedService, TokenCleanupHost>();
-
-            builder.Services.AddTransient<IPersistedGrantStore, PersistedGrantStore>();
 
             var storeOptions = new StoreOptions();
             storeOptionsAction?.Invoke(storeOptions);
@@ -61,36 +69,15 @@ namespace IdentityServer4.MongoDB.Extensions
             return builder;
         }
 
-        private class TokenCleanupHost : IHostedService
+        /// <summary>
+        /// Adds an implementation of the IOperationalStoreNotification to IdentityServer.
+        /// </summary>
+        public static IIdentityServerBuilder AddOperationalStoreNotification<T>(
+            this IIdentityServerBuilder builder)
+            where T : class, IOperationalStoreNotification
         {
-            private readonly TokenCleanup _tokenCleanup;
-            private readonly TokenCleanupOptions _options;
-
-            public TokenCleanupHost(TokenCleanup tokenCleanup, TokenCleanupOptions options)
-            {
-                _tokenCleanup = tokenCleanup;
-                _options = options;
-            }
-
-            public Task StartAsync(CancellationToken cancellationToken)
-            {
-                if (_options.EnableTokenCleanup)
-                {
-                    _tokenCleanup.Start(cancellationToken);
-                }
-
-                return Task.CompletedTask;
-            }
-
-            public Task StopAsync(CancellationToken cancellationToken)
-            {
-                if (_options.EnableTokenCleanup)
-                {
-                    _tokenCleanup.Stop();
-                }
-
-                return Task.CompletedTask;
-            }
+            builder.Services.AddTransient<IOperationalStoreNotification, T>();
+            return builder;
         }
     }
 }

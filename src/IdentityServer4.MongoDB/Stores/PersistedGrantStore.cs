@@ -80,7 +80,7 @@ namespace IdentityServer4.MongoDB.Stores
 
         public async Task RemoveAllAsync(string subjectId, string clientId)
         {
-            var persistedGrants = await _persistedGrantRepository.AsQueryable().Where(x => x.SubjectId == subjectId && x.ClientId == clientId).ToListAsync();
+            var persistedGrants = await _persistedGrantRepository.AsQueryable().Where(x => x.SubjectId == subjectId && x.ClientId == clientId).ToListAsync().ConfigureAwait(false);
 
             _logger.LogDebug("removing {persistedGrantCount} persisted grants from database for subject {subjectId}, clientId {clientId}", persistedGrants.Count, subjectId, clientId);
 
@@ -90,7 +90,7 @@ namespace IdentityServer4.MongoDB.Stores
 
         public async Task RemoveAllAsync(string subjectId, string clientId, string type)
         {
-            var persistedGrants = await _persistedGrantRepository.AsQueryable().Where(x => x.SubjectId == subjectId && x.ClientId == clientId && x.Type == type).ToListAsync();
+            var persistedGrants = await _persistedGrantRepository.AsQueryable().Where(x => x.SubjectId == subjectId && x.ClientId == clientId && x.Type == type).ToListAsync().ConfigureAwait(false);
 
             _logger.LogDebug("removing {persistedGrantCount} persisted grants from database for subject {subjectId}, clientId {clientId}, grantType {persistedGrantType}", persistedGrants.Count, subjectId, clientId, type);
 

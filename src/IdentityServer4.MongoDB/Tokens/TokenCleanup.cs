@@ -10,66 +10,80 @@ using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
 
-namespace IdentityServer4.MongoDB
+namespace IdentityServer4.MongoDB.Tokens
 {
-    internal class TokenCleanup
+    /// <summary>
+    /// Helper to perodically cleanup expired persisted grants.
+    /// </summary>
+    public class TokenCleanup
     {
         private readonly ILogger<TokenCleanup> _logger;
         private readonly TokenCleanupOptions _options;
         private readonly IServiceProvider _serviceProvider;
-        private readonly TimeSpan _interval;
+
         private CancellationTokenSource _source;
+
+        private TimeSpan CleanupInterval => TimeSpan.FromSeconds(_options.TokenCleanupInterval);
 
         public TokenCleanup(IServiceProvider serviceProvider, ILogger<TokenCleanup> logger, TokenCleanupOptions options)
         {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _options = options ?? throw new ArgumentNullException(nameof(options));
-            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
-
-            if (options.Interval < 1) throw new ArgumentException("interval must be more than 1 second");
+            if (_options.TokenCleanupInterval < 1) throw new ArgumentException("Token cleanup interval must be at least 1 second");
             if (_options.TokenCleanupBatchSize < 1) throw new ArgumentException("Token cleanup batch size interval must be at least 1");
-            _interval = TimeSpan.FromSeconds(options.Interval);
+
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         }
 
+        /// <summary>
+        /// Starts the token cleanup polling.
+        /// </summary>
         public void Start()
         {
             Start(CancellationToken.None);
         }
 
+        /// <summary>
+        /// Starts the token cleanup polling.
+        /// </summary>
         public void Start(CancellationToken cancellationToken)
         {
             if (_source != null) throw new InvalidOperationException("Already started. Call Stop first.");
 
-            _logger.LogDebug("Starting token cleanup");
+            _logger.LogDebug("Starting grant removal");
 
             _source = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
-            Task.Factory.StartNew(() => StartInternal(_source.Token), _source.Token);
+            Task.Factory.StartNew(() => StartInternalAsync(_source.Token));
         }
 
+        /// <summary>
+        /// Stops the token cleanup polling.
+        /// </summary>
         public void Stop()
         {
             if (_source == null) throw new InvalidOperationException("Not started. Call Start first.");
 
-            _logger.LogDebug("Stopping token cleanup");
+            _logger.LogDebug("Stopping grant removal");
 
             _source.Cancel();
             _source = null;
         }
 
-        private async Task StartInternal(CancellationToken cancellationToken)
+
+        private async Task StartInternalAsync(CancellationToken cancellationToken)
         {
             while (true)
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    _logger.LogDebug("CancellationRequested");
+                    _logger.LogDebug("CancellationRequested. Exiting.");
                     break;
                 }
 
                 try
                 {
-                    await Task.Delay(_interval, cancellationToken);
+                    await Task.Delay(CleanupInterval, cancellationToken);
                 }
                 catch (TaskCanceledException)
                 {
@@ -84,24 +98,29 @@ namespace IdentityServer4.MongoDB
 
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    _logger.LogDebug("CancellationRequested");
+                    _logger.LogDebug("CancellationRequested. Exiting.");
                     break;
                 }
 
-                await ClearTokens();
+                await RemoveExpiredGrantsAsync();
             }
         }
 
-        private async Task ClearTokens()
+        /// <summary>
+        /// Method to clear expired persisted grants.
+        /// </summary>
+        /// <returns></returns>
+        public async Task RemoveExpiredGrantsAsync()
         {
             try
             {
-                _logger.LogTrace("Querying for tokens to clear");
+                _logger.LogTrace("Querying for expired grants to remove");
 
-                var found = int.MaxValue;
+                var found = Int32.MaxValue;
 
                 using (var serviceScope = _serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
                 {
+                    
                     var persistedGrantRepository = serviceScope.ServiceProvider.GetService<IRepository<PersistedGrant>>();
 
                     while (found >= _options.TokenCleanupBatchSize)
@@ -119,13 +138,20 @@ namespace IdentityServer4.MongoDB
                         {
                             var ids = expired.Select(x => x.Id).ToArray();
                             await persistedGrantRepository.DeleteAsync(x => ids.Contains(x.Id)).ConfigureAwait(false);
+
+                            // notification
+                            var tokenCleanupNotification = serviceScope.ServiceProvider.GetService<IOperationalStoreNotification>();
+                            if (tokenCleanupNotification != null)
+                            {
+                                await tokenCleanupNotification.PersistedGrantsRemovedAsync(expired);
+                            }
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError("Exception cleaning tokens {exception}", ex.Message);
+                _logger.LogError("Exception removing expired grants: {exception}", ex.Message);
             }
         }
     }
