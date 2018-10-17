@@ -18,7 +18,7 @@ namespace IdentityServer4.MongoDB.Services
 
         public CorsPolicyService(IHttpContextAccessor httpContextAccessor, ILogger<CorsPolicyService> logger)
         {
-            _httpContextAccessor = httpContextAccessor;
+            _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
             _logger = logger;
         }
 
