@@ -74,7 +74,7 @@ namespace IdentityServer4.MongoDB.Repositories
 
         public virtual Task<long> CountAsync(Expression<Func<T, bool>> predicate)
         {
-            return Collection.CountAsync(predicate);
+            return Collection.CountDocumentsAsync(predicate);
         }
 
         public virtual async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate)
