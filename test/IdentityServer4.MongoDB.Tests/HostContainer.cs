@@ -2,9 +2,11 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using IdentityServer4.MongoDB.Entities;
-using Microsoft.Extensions.DependencyInjection;
 using IdentityServer4.MongoDB.Extensions;
 using IdentityServer4.MongoDB.Repositories;
+using Microsoft.Extensions.DependencyInjection;
+using Mongo2Go;
+using MongoDB.Driver;
 
 namespace IdentityServer4.MongoDB.Tests
 {
@@ -19,17 +21,31 @@ namespace IdentityServer4.MongoDB.Tests
         {
             var services = new ServiceCollection();
 
+
+            var runner = MongoDbRunner.Start(singleNodeReplSet: false);
+            string conection = $"{runner.ConnectionString}identityserver";
+
+            services.AddSingleton(runner);
+
             services.AddLogging();
 
             services.AddIdentityServer()
-                .AddConfigurationStore()
-                .AddOperationalStore();
+                .AddConfigurationStore(opt =>
+                {
+                    opt.ConnectionString = conection;
+                    opt.ReadPreference = ReadPreference.Nearest;
+                })
+                .AddOperationalStore(opt =>
+                {
+                    opt.ConnectionString = conection;
+                    opt.ReadPreference = ReadPreference.Nearest;
+                });
 
             var containerBuilder = new ContainerBuilder();
             containerBuilder.Populate(services);
             Container = containerBuilder.Build();
 
-            EnsureInitialized();
+            //EnsureInitialized();
         }
 
         private void EnsureInitialized()

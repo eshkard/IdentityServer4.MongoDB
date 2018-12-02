@@ -28,9 +28,10 @@ namespace IdentityServer4.MongoDB.Tests.Stores
             };
             var mapper = _hostContainer.Container.Resolve<IMapper>();
             var repository = _hostContainer.Container.Resolve<IRepository<Entities.Client>>();
-            await repository.AddAsync(mapper.Map<Entities.Client>(testClient)).ConfigureAwait(false);
+            await repository.AddAsync(mapper.Map<Entities.Client>(testClient))
+                .ConfigureAwait(false);
 
-            // Assert
+            // Act
             var clientStore = _hostContainer.Container.Resolve<IClientStore>();
             var client = await clientStore.FindClientByIdAsync(testClient.ClientId).ConfigureAwait(false);
 
@@ -56,7 +57,7 @@ namespace IdentityServer4.MongoDB.Tests.Stores
             var repository = _hostContainer.Container.Resolve<IRepository<Entities.Client>>();
             await repository.AddAsync(mapper.Map<Entities.Client>(testClient)).ConfigureAwait(false);
 
-            // Assert
+            // Act
             var clientStore = _hostContainer.Container.Resolve<IClientStore>();
             var client = await clientStore.FindClientByIdAsync(testClient.ClientId).ConfigureAwait(false);
 

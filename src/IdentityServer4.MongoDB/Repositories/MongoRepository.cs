@@ -32,7 +32,7 @@ namespace IdentityServer4.MongoDB.Repositories
 
         public virtual async Task<T> AddAsync(T entity)
         {
-            await Collection.InsertOneAsync(entity);
+            await Collection.InsertOneAsync(entity).ConfigureAwait(false);
             return entity;
         }
 
@@ -79,8 +79,8 @@ namespace IdentityServer4.MongoDB.Repositories
 
         public virtual async Task<bool> ExistsAsync(Expression<Func<T, bool>> predicate)
         {
-            var cursor = await Collection.FindAsync(predicate);
-            return await cursor.AnyAsync();
+            var cursor = await Collection.FindAsync(predicate).ConfigureAwait(false);
+            return await cursor.AnyAsync().ConfigureAwait(false);
         }
 
         protected override ReadPreference ReadPreferenceValue => _storeOptions.ReadPreference;
