@@ -2,12 +2,7 @@
 
 MongoDB persistence layer for IdentityServer4 based on the Official [EntityFramework](https://github.com/IdentityServer/IdentityServer4.EntityFramework) persistence layer.
 
-[![Build status](https://ci.appveyor.com/api/projects/status/c9bqe6pcbppfwrbc/branch/release?svg=true)](https://ci.appveyor.com/project/jwu-au/identityserver4-mongodb/branch/release)
-[![NuGet](https://img.shields.io/nuget/v/Selz.IdentityServer4.MongoDB.svg)](https://www.nuget.org/packages/Selz.IdentityServer4.MongoDB/)
-
-
-[![identity-server MyGet Build Status](https://www.myget.org/BuildSource/Badge/identity-server?identifier=d7745704-7151-450f-a20f-e4efdafa2e68)](https://www.myget.org/)
-[![MyGet Feed](https://img.shields.io/myget/identity-server/v/Selz.IdentityServer4.MongoDB.svg?style=flat-square)](https://www.myget.org/feed/identity-server/package/nuget/Selz.IdentityServer4.MongoDB)
+[![eshkard_net MyGet Build Status](https://www.myget.org/BuildSource/Badge/eshkard_net?identifier=d92ea344-0af7-420a-895d-2892e704aa54)](https://www.myget.org/)
 
 ## Simple Usage
 ```c#
